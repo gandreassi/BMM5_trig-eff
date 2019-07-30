@@ -24,7 +24,7 @@ void fitter::makeDataSet(TChain* chain){
 	RooRealVar *pt1 = new RooRealVar("mu1_pt","mu1_pt", -1);
 	RooRealVar *pt2 = new RooRealVar("mu2_pt","mu2_pt", -1);
 	RooRealVar *HLT_sig_roo = new RooRealVar("HLT_DoubleMu4_3_Bs","HLT_DoubleMu4_3_Bs", -1);
-	RooDataSet *data = new RooDataSet("data", "data", RooArgSet(*M,*pt1,*pt2,*HLT_sig_roo));
+	data = new RooDataSet("data", "data", RooArgSet(*M,*pt1,*pt2,*HLT_sig_roo));
 
 
 	//Loop on events...
@@ -65,11 +65,13 @@ void fitter::makeDataSet(TChain* chain){
 	//Now we can create our pdf and fit it
 	w.import(*M);
 	w.import(*data);
+}
 
+void fitter::reduceDataSet(string cut){
+	data = (RooDataSet*)w.data("data")->reduce(cut.c_str());
 }
 
 void fitter::fit(){
-	auto data=w.data("data");
 	w.factory("RooCBShape::cb(M,mu[3.05,3,3.2],sigma0[0.01,0.005,0.05], alpha[0.1,3],n[0.5,5])");
 	w.factory("Gaussian::g1(M,mu,sigma1[0.04,0.01,0.15])");
 	w.factory("Gaussian::g2(M,mu,sigma2[0.04,0.01,0.15])");

@@ -12,6 +12,7 @@ int main (int argc, char *argv[]) {
 
 	fitter f;
 	f.makeDataSet(chain);
+	//f.reduceDataSet("mu1_pt>5");
   	f.fit();
   	f.saveFitPdf("plots/fit.pdf");
   	cout<<f.getSignalYield()<<" +/- "<<f.getSignalYieldError()<<endl;

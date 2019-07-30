@@ -93,6 +93,7 @@ class fitter {
 		fitter();//constructor
 
 		void makeDataSet(TChain*);
+		void reduceDataSet(std::string);
 		void fit();
 		void saveFitPdf(std::string);
 		float getSignalYield();
@@ -100,6 +101,7 @@ class fitter {
 
 	private:
 		RooWorkspace w;
+		RooDataSet *data;
 };
 
 #endif
