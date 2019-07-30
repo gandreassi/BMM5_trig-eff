@@ -92,7 +92,8 @@ class fitter {
 		
 		fitter();//constructor
 
-		void fit(TChain*);
+		void makeDataSet(TChain*);
+		void fit();
 		void saveFitPdf(std::string);
 		float getSignalYield();
 		float getSignalYieldError();

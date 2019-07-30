@@ -11,7 +11,8 @@ int main (int argc, char *argv[]) {
 	chain->Add("/mnt/hadoop/scratch/gandreas/Charmonium_Dimuon0_Jpsi_NoVertexing/*.root");
 
 	fitter f;
-  	f.fit(chain);
+	f.makeDataSet(chain);
+  	f.fit();
   	f.saveFitPdf("plots/fit.pdf");
   	cout<<f.getSignalYield()<<" +/- "<<f.getSignalYieldError()<<endl;
 
