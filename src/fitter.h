@@ -61,6 +61,7 @@
 #include "TParticle.h"
 #include "TClass.h"
 #include "TSystem.h"
+#include "TEfficiency.h"
 
 //  RooFit
 #include "RooFit.h"

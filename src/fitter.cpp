@@ -15,7 +15,7 @@ void fitter::makeDataSet(TChain* chain){
 	TTreeReaderArray<Float_t> phi(r, "Muon_phi");
 	TTreeReaderArray<Float_t> mass(r, "Muon_mass");
 	TTreeReaderArray<Int_t> c(r, "Muon_charge");
-	TTreeReaderValue<bool> HLT_sig(r, "HLT_DoubleMu4_3_Bs");
+	TTreeReaderValue<bool> HLT_sig(r, "HLT_Dimuon0_LowMass");
 
 	///RooFit stuff
 	const float M_min =2.91;
@@ -23,7 +23,7 @@ void fitter::makeDataSet(TChain* chain){
 	RooRealVar *M = new RooRealVar("M","m(#mu#mu)",M_min, M_max);
 	RooRealVar *pt1 = new RooRealVar("mu1_pt","mu1_pt", -1);
 	RooRealVar *pt2 = new RooRealVar("mu2_pt","mu2_pt", -1);
-	RooRealVar *HLT_sig_roo = new RooRealVar("HLT_DoubleMu4_3_Bs","HLT_DoubleMu4_3_Bs", -1);
+	RooRealVar *HLT_sig_roo = new RooRealVar("HLT_Dimuon0_LowMass","HLT_Dimuon0_LowMass", -1);
 	data = new RooDataSet("data", "data", RooArgSet(*M,*pt1,*pt2,*HLT_sig_roo));
 
 
@@ -72,25 +72,32 @@ void fitter::reduceDataSet(string cut){
 }
 
 void fitter::fit(){
-	w.factory("RooCBShape::cb(M,mu[3.05,3,3.2],sigma0[0.01,0.005,0.05], alpha[0.1,3],n[0.5,5])");
+	if (data->sumEntries() == 0) return;
+	w.factory("RooCBShape::cb(M,mu[3.1,3,3.2],sigma0[0.01,0.005,0.05], alpha[0.1,3],n[3])");
 	w.factory("Gaussian::g1(M,mu,sigma1[0.04,0.01,0.15])");
 	w.factory("Gaussian::g2(M,mu,sigma2[0.04,0.01,0.15])");
-	w.factory("Gaussian::g3(M,mu,sigma3[0.01,0.005,0.1])");
-	w.factory("SUM::sig(cb,gf1[0.5,0.1,1.0]*g1, gf2[0.2,0.01,1.0]*g2)");
-	w.factory("Exponential::e(M,tau1[-0.5,-2,-0.01])");
+	//w.factory("Gaussian::g3(M,mu,sigma3[0.01,0.005,0.1])");
+	w.factory("SUM::2gau(gf1[0.05,1.0]*g1, g2)");
+	//w.factory("SUM::3gau(gf2[0.05,1.0]*2gau, g3)");
+	w.factory("SUM::sig(gf3[0.05,1.0]*2gau, cb)");
+	w.factory("Exponential::e(M,tau1[-0.05,-0.1,-0.005])");
 	float nentries = data->sumEntries();
-	RooRealVar s("s", "signal yield", 0.9*nentries, 0, nentries); //signal yield
-	RooRealVar b("b", "background yield", 0.1*nentries, 0, nentries); //background yield
+	RooRealVar s("s", "signal yield", 1,0,2); //signal yield
 	w.import(s);
+	w.var("s")->setRange(0.3*nentries, 1.01*nentries);
+	w.var("s")->setVal(0.9*nentries);
+	RooRealVar b("b", "background yield", 1,0,2); //background yield
 	w.import(b);
+	w.var("b")->setRange(-0.01*nentries, 0.3*nentries);
+	w.var("b")->setVal(0.05*nentries);
 	w.factory("SUM::model(s*sig,b*e)");
 
-	w.pdf("model")->fitTo(*data);
+	w.pdf("model")->fitTo(*data, RooFit::Save());
 }
 
 void fitter::saveFitPdf(string pdffname){
+	if (data->sumEntries() == 0) return;
 	auto M = w.var("M");
-	auto data = w.data("data");
 	auto frame = M->frame();
 	frame->SetTitle("");
 	data->plotOn(frame);
@@ -133,9 +140,11 @@ void fitter::saveFitPdf(string pdffname){
 }
 
 float fitter::getSignalYield() {
+	if (data->sumEntries() == 0) return 0;
 	return w.var("s")->getVal();
 }
 
 float fitter::getSignalYieldError() {
+	if (data->sumEntries() == 0) return 0;
 	return w.var("s")->getError();
 }
