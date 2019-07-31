@@ -96,13 +96,16 @@ void fitter::preparePDF(){
 	w.pdf("model")->fitTo(*data, RooFit::Save());
 
 
-	RooArgSet* model_params = w.pdf("model")->getParameters(RooArgSet(*w.var("M")));
-	auto iter = model_params->createIterator();
-
-	RooRealVar* var;
-	while ((var = (RooRealVar*)iter->Next())) {
-		var->setConstant(kTRUE);
-	}
+	// RooArgSet* model_params = w.pdf("model")->getParameters(RooArgSet(*w.var("M")));
+	// auto iter = model_params->createIterator();
+	// RooRealVar* var;
+	// while ((var = (RooRealVar*)iter->Next())) {
+	// 	var->setConstant(kTRUE);
+	// }
+	w.var("tau1")->setConstant(kTRUE);
+	w.var("mu")->setConstant(kTRUE);
+	w.var("alpha")->setConstant(kTRUE);
+	w.var("n")->setConstant(kTRUE);
 	w.saveSnapshot("default", w.allVars());
 }
 
