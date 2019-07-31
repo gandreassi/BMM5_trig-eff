@@ -87,15 +87,17 @@
 #include "RooCBShape.h"
 #include "TStyle.h"
 #include "RooMinimizer.h"
+#include "RooCustomizer.h"
 
 class fitter {
 	public:
 		
 		fitter();//constructor
 
-		void makeDataSet(TChain*);
+		void makeDataSet(TChain*, float, float);
 		void reduceDataSet(std::string);
 		void fit();
+		void preparePDF();
 		void saveFitPdf(std::string);
 		float getSignalYield();
 		float getSignalYieldError();
@@ -103,6 +105,7 @@ class fitter {
 	private:
 		RooWorkspace w;
 		RooDataSet *data;
+		RooDataSet* data_full;
 };
 
 #endif

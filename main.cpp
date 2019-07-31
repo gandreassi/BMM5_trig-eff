@@ -3,12 +3,20 @@
 //data in "/mnt/hadoop/scratch/gandreas/Charmonium_Dimuon0_Jpsi_NoVertexing/*.root"
 
 int main (int argc, char *argv[]) {
+
+	TChain* chain0 = new TChain("Events");
+	chain0->Add("/mnt/hadoop/scratch/gandreas/Charmonium_Dimuon0_LowMass_skimmed/*.root");
+	fitter f;
+
+	///prepare pdf by fitting it to the whole DiMuon0_LowMass dataset
+	f.makeDataSet(chain0, 2.5, 3.5);
+	f.preparePDF();
+	f.saveFitPdf("plots/fit_prep.pdf");
   
 	TChain* chain = new TChain("Events");
 	chain->Add("/mnt/hadoop/scratch/gandreas/Charmonium_Dimuon0_Jpsi_NoVertexing/*.root");
 
-	fitter f;
-	f.makeDataSet(chain);
+	f.makeDataSet(chain, 2.95, 3.25);
 
 	float pt_bin_boundaries[] = {3, 3.5, 4, 5, 6, 7, 8, 10, 15, 20, 30, 100};
 	//float pt_bin_boundaries[] = {3, 3.5, 30, 100};
@@ -17,12 +25,12 @@ int main (int argc, char *argv[]) {
 	TH1F hpass = TH1F("hpass", "hpass", nbins1, pt_bin_boundaries);
 	TH1F htot = TH1F("htot", "htot", nbins1, pt_bin_boundaries);
 
-	
+
 	for (int i=0; i<nbins1; i++){
 		string bincut = Form("mu1_pt>%f && mu1_pt<%f", pt_bin_boundaries[i], pt_bin_boundaries[i+1]);
 		f.reduceDataSet(bincut);
 	  	f.fit();
-	  	f.saveFitPdf("plots/fit.pdf");
+	  	f.saveFitPdf(Form("plots/fit_%d.pdf", i));
 	  	htot.SetBinContent(i+1, f.getSignalYield());
 	  	htot.SetBinError(i+1, f.getSignalYieldError());
 
@@ -30,7 +38,7 @@ int main (int argc, char *argv[]) {
 
 		f.reduceDataSet(bincut+" && HLT_Dimuon0_LowMass");
 	  	f.fit();
-	  	f.saveFitPdf("plots/fit_pass.pdf");
+	  	f.saveFitPdf(Form("plots/fit_pass_%d.pdf", i));
 	  	hpass.SetBinContent(i+1, f.getSignalYield());
 	  	hpass.SetBinError(i+1, f.getSignalYieldError());
 
