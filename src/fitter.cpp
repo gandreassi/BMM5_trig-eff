@@ -125,7 +125,10 @@ void fitter::fit(){
 }
 
 void fitter::saveFitPdf(string pdffname){
-	if (data->sumEntries() == 0) return;
+	if (data->sumEntries() == 0) {
+		cout<<"Empty dataset. Nothing to plot"<<endl;
+		return;
+	}
 	auto M = w.var("M");
 	auto frame = M->frame();
 	frame->SetTitle("");

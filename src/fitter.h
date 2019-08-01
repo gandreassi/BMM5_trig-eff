@@ -41,6 +41,7 @@
 #include "TProfile.h"
 #include "TGraph.h"
 #include "TGraphErrors.h"
+#include "TGraphAsymmErrors.h"
 #include "TMultiGraph.h"
 #include "TCanvas.h"
 #include "TPad.h"
