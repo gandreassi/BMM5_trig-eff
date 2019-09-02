@@ -7,54 +7,45 @@ fitter::fitter(){//constructor
 
 void fitter::makeDataSet(TChain* chain, float M_min, float M_max){
 
+	cout<<"makeDataSet called"<<endl;
 	//Declare TTreeReader and the necessary variables
 	TTreeReader r(chain);
-	TTreeReaderValue<UInt_t> mus(r, "nMuon");
-	TTreeReaderArray<Float_t> pt(r, "Muon_pt");
-	TTreeReaderArray<Float_t> eta(r, "Muon_eta");
-	TTreeReaderArray<Float_t> phi(r, "Muon_phi");
-	TTreeReaderArray<Float_t> mass(r, "Muon_mass");
-	TTreeReaderArray<Int_t> c(r, "Muon_charge");
-	TTreeReaderValue<bool> HLT_sig(r, "HLT_Dimuon0_LowMass");
+	TTreeReaderArray<Float_t> vtx_prob(r, "mm_kin_vtx_prob");
+	TTreeReaderArray<Float_t> DiMuon_mass(r, "mm_mass");
+	TTreeReaderValue<bool> HLT_ref(r, "HLT_Dimuon0_LowMass");
+	TTreeReaderValue<bool> HLT_sig(r, "HLT_Dimuon0_Jpsi");
+	TTreeReaderValue<bool> HLT_norm(r, "HLT_Dimuon0_Jpsi_NoVertexing");
 
 	RooRealVar *M = new RooRealVar("M","m(#mu#mu)",M_min, M_max);
-	RooRealVar *pt1 = new RooRealVar("mu1_pt","mu1_pt", -1);
-	RooRealVar *pt2 = new RooRealVar("mu2_pt","mu2_pt", -1);
-	RooRealVar *HLT_sig_roo = new RooRealVar("HLT_Dimuon0_LowMass","HLT_Dimuon0_LowMass", -1);
-	data = new RooDataSet("data", "data", RooArgSet(*M,*pt1,*pt2,*HLT_sig_roo));
+	RooRealVar *HLT_ref_roo = new RooRealVar("HLT_Dimuon0_LowMass","HLT_Dimuon0_LowMass", -1);
+	RooRealVar *HLT_sig_roo = new RooRealVar("HLT_Dimuon0_Jpsi","HLT_Dimuon0_Jpsi", -1);
+	RooRealVar *HLT_norm_roo = new RooRealVar("HLT_Dimuon0_Jpsi_NoVertexing","HLT_Dimuon0_Jpsi_NoVertexing", -1);
+	RooRealVar *vtx_prob_roo = new RooRealVar("mm_kin_vtx_prob","mm_kin_vtx_prob", -1);
+	data = new RooDataSet("data", "data", RooArgSet(*M,*HLT_ref_roo,*HLT_sig_roo,*HLT_norm_roo,*vtx_prob_roo));
 
 
 	//Loop on events...
 	unsigned int max_evts=0;
 	unsigned int i=0;
 
+	unsigned long long int entries = chain->GetEntries();
+
+	string str="Analyzed "+std::to_string(100*float(i)/entries)+"\% of the events.";
 	while (r.Next()) {
-		int c_prod=c[0]; //charge of the first muon
-		int index_second_muon=-1;
-		for (int i=1; i<(int)*mus; i++){
-			if (c_prod*c[i]==-1){//opposite charge requirement. That"s going to be our second muon
-				index_second_muon=i;
-				break;
-			}
+		str="Analyzed "+std::to_string(100*float(i)/entries)+"\% of the events.";
+		if (i%100000==0) {
+			cout << string(str.length(),'\b');
+			cout << str;
 		}
 
-		if (index_second_muon>0){
-
-			TLorentzVector P1;
-			TLorentzVector P2;
-			P1.SetPtEtaPhiM(pt[0], eta[0], phi[0], mass[0]);
-			P2.SetPtEtaPhiM(pt[index_second_muon], eta[index_second_muon], phi[index_second_muon], mass[index_second_muon]);
-			TLorentzVector P = P1+P2;
-
-			///add RooDataSet
-			float DiMuon_mass=P.M();
-			if (DiMuon_mass>=M_min && DiMuon_mass<=M_max){
-				*M=DiMuon_mass;
-				*pt1=pt[0];
-				*pt2=pt[index_second_muon];
-				*HLT_sig_roo=*HLT_sig;
-				data->add(RooArgSet(*M, *pt1, *pt2, *HLT_sig_roo));
-			}
+		///add RooDataSet
+		if (DiMuon_mass[0]>=M_min && DiMuon_mass[0]<=M_max){
+			*M=DiMuon_mass[0];
+			*HLT_sig_roo=*HLT_sig;
+			*HLT_norm_roo=*HLT_norm;
+			*HLT_ref_roo=*HLT_ref;
+			*vtx_prob_roo=vtx_prob[0];
+			data->add(RooArgSet(*M,*HLT_ref_roo,*HLT_sig_roo,*HLT_norm_roo,*vtx_prob_roo));
 		}
 		if (++i>max_evts and max_evts>0) break;
 	}
@@ -62,27 +53,41 @@ void fitter::makeDataSet(TChain* chain, float M_min, float M_max){
 	if (w.var("M") != 0){
 		w.var("M")->setRange(M_min, M_max);
 	} else {
-	w.import(*M);
+		w.import(*M);
 	}
 	data_full = (RooDataSet*)data->Clone();
-	cout<<":::::D:D:D"<<data_full->sumEntries()<<endl;
+	M_min_def = M_min;
+	M_max_def = M_max;
 }
 
-void fitter::reduceDataSet(string cut){
+void fitter::reduceDataSet(string cut, float M_min, float M_max){
+	cout<<"reduceDataSet called"<<endl;
+	w.var("M")->setMin(M_min);
+	w.var("M")->setMax(M_max);
 	data = (RooDataSet*)data_full->reduce(cut.c_str());
 }
 
-void fitter::preparePDF(){
+void fitter::resetDataSet(){
+	cout<<"resetDataSet called"<<endl;
+	w.var("M")->setMin(M_min_def);
+	w.var("M")->setMax(M_max_def);
+	delete data;
+	data = data_full;
+}
+
+void fitter::preparePDF(bool do_preliminary_fit = false){
+
+	binned_data = new RooDataHist("dh", "binned data", RooArgSet(*w.var("M")), *data);
 
 	w.factory("RooCBShape::cb(M,mu[3.1,3,3.2],sigma0[0.01,0.005,0.05], alpha[0.1,3],n[1,5])");
 	w.factory("Gaussian::g1(M,mu,sigma1[0.04,0.01,0.15])");
 	w.factory("Gaussian::g2(M,mu,sigma2[0.04,0.01,0.15])");
 	//w.factory("Gaussian::g3(M,mu,sigma3[0.01,0.005,0.1])");
-	w.factory("SUM::2gau(gf1[0.05,1.0]*g1, g2)");
+	w.factory("SUM::2gau(gf1[0.2,0.8]*g1, g2)");
 	//w.factory("SUM::3gau(gf2[0.05,1.0]*2gau, g3)");
-	w.factory("SUM::sig(gf3[0.05,1.0]*2gau, cb)");
+	w.factory("SUM::sig(gf3[0.1,0.8]*2gau, cb)");
 	w.factory("Exponential::e(M,tau1[-0.5,-3,-0.05])");
-	float nentries = data->sumEntries();
+	float nentries = binned_data->sumEntries();
 	RooRealVar s("s", "signal yield", 1,0,2); //signal yield
 	w.import(s);
 	w.var("s")->setRange(0.3*nentries, 1.01*nentries);
@@ -93,23 +98,22 @@ void fitter::preparePDF(){
 	w.var("b")->setVal(0.05*nentries);
 	w.factory("SUM::model(s*sig,b*e)");
 
-	w.pdf("model")->fitTo(*data, RooFit::Save());
-
-
-	// RooArgSet* model_params = w.pdf("model")->getParameters(RooArgSet(*w.var("M")));
-	// auto iter = model_params->createIterator();
-	// RooRealVar* var;
-	// while ((var = (RooRealVar*)iter->Next())) {
-	// 	var->setConstant(kTRUE);
-	// }
-	w.var("tau1")->setConstant(kTRUE);
-	w.var("mu")->setConstant(kTRUE);
-	w.var("alpha")->setConstant(kTRUE);
-	w.var("n")->setConstant(kTRUE);
-	w.saveSnapshot("default", w.allVars());
+	if (do_preliminary_fit) {
+		w.pdf("model")->fitTo(*binned_data, RooFit::Save()); //binned fit
+		w.var("tau1")->setConstant(kTRUE);
+		//w.var("mu")->setConstant(kTRUE);
+		w.var("alpha")->setConstant(kTRUE);
+		w.var("n")->setConstant(kTRUE);
+		w.var("gf1")->setConstant(kTRUE);
+		w.var("gf3")->setConstant(kTRUE);
+		w.saveSnapshot("default", w.allVars());
+	}
 }
 
 void fitter::fit(){
+
+	binned_data = new RooDataHist("dh", "binned data", RooArgSet(*w.var("M")), *data);
+
 	float nentries = data->sumEntries();
 	if (nentries == 0) return;
 	if (w.getSnapshot("default") != 0) w.loadSnapshot("default");
@@ -121,7 +125,16 @@ void fitter::fit(){
 	w.var("b")->setVal(0.05*nentries);
 	w.factory("SUM::model(s*sig,b*e)");
 
-	w.pdf("model")->fitTo(*data, RooFit::Save());
+	RooFitResult *result = 0;
+	int n_attempts = 0;
+	while ((result==0 || result->covQual()<3 || result->status()!=0) && n_attempts<10) { // loop until convergence
+		result = w.pdf("model")->fitTo(*binned_data, RooFit::Save());
+		n_attempts++;
+	}
+	if (n_attempts == 10) {
+		cout<<"Fit did not converge after many attempts. Giving up."<<endl;
+		exit(0);
+	}
 }
 
 void fitter::saveFitPdf(string pdffname){
@@ -132,7 +145,7 @@ void fitter::saveFitPdf(string pdffname){
 	auto M = w.var("M");
 	auto frame = M->frame();
 	frame->SetTitle("");
-	data->plotOn(frame);
+	binned_data->plotOn(frame);
 	w.pdf("model")->plotOn(frame);
 	auto hpull = frame->pullHist();
 	w.pdf("model")->plotOn(frame, RooFit::Components("e"), RooFit::LineColor(kRed), RooFit::LineStyle(kDashed));

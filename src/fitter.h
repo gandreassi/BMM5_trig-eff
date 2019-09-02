@@ -96,9 +96,10 @@ class fitter {
 		fitter();//constructor
 
 		void makeDataSet(TChain*, float, float);
-		void reduceDataSet(std::string);
+		void reduceDataSet(std::string, float, float);
+		void resetDataSet();
 		void fit();
-		void preparePDF();
+		void preparePDF(bool);
 		void saveFitPdf(std::string);
 		float getSignalYield();
 		float getSignalYieldError();
@@ -106,7 +107,10 @@ class fitter {
 	private:
 		RooWorkspace w;
 		RooDataSet *data;
-		RooDataSet* data_full;
+		RooDataSet *data_full;
+		RooDataHist *binned_data;
+		float M_min_def;
+		float M_max_def;
 };
 
 #endif
