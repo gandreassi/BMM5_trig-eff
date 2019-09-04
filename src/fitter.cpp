@@ -27,18 +27,18 @@ void fitter::makeDataSet(TChain* chain, float M_min, float M_max){
 	//Loop on events...
 	unsigned int max_evts=0;
 	unsigned int i=0;
-
+	chain->LoadTree(-1); //load the first tree in the chain
 	unsigned long long int entries = chain->GetEntries();
 
 	string str="Analyzed "+std::to_string(100*float(i)/entries)+"\% of the events.";
 	while (r.Next()) {
-		str="Analyzed "+std::to_string(100*float(i)/entries)+"\% of the events.";
 		if (i%100000==0) {
+			str="Analyzed "+std::to_string(100*float(i)/entries)+"\% of the events.";
 			cout << string(str.length(),'\b');
 			cout << str;
 		}
 
-		///add RooDataSet
+		///add point int RooDataSet
 		if (DiMuon_mass[0]>=M_min && DiMuon_mass[0]<=M_max){
 			*M=DiMuon_mass[0];
 			*HLT_sig_roo=*HLT_sig;
@@ -83,9 +83,9 @@ void fitter::preparePDF(bool do_preliminary_fit = false){
 	w.factory("Gaussian::g1(M,mu,sigma1[0.04,0.01,0.15])");
 	w.factory("Gaussian::g2(M,mu,sigma2[0.04,0.01,0.15])");
 	//w.factory("Gaussian::g3(M,mu,sigma3[0.01,0.005,0.1])");
-	w.factory("SUM::2gau(gf1[0.2,0.8]*g1, g2)");
+	w.factory("SUM::2gau(gf1[0.2,0.7]*g1, g2)");
 	//w.factory("SUM::3gau(gf2[0.05,1.0]*2gau, g3)");
-	w.factory("SUM::sig(gf3[0.1,0.8]*2gau, cb)");
+	w.factory("SUM::sig(gf3[0.1,0.5]*2gau, cb)");
 	w.factory("Exponential::e(M,tau1[-0.5,-3,-0.05])");
 	float nentries = binned_data->sumEntries();
 	RooRealVar s("s", "signal yield", 1,0,2); //signal yield
@@ -101,11 +101,15 @@ void fitter::preparePDF(bool do_preliminary_fit = false){
 	if (do_preliminary_fit) {
 		w.pdf("model")->fitTo(*binned_data, RooFit::Save()); //binned fit
 		w.var("tau1")->setConstant(kTRUE);
-		//w.var("mu")->setConstant(kTRUE);
+		w.var("mu")->setConstant(kTRUE);
 		w.var("alpha")->setConstant(kTRUE);
 		w.var("n")->setConstant(kTRUE);
 		w.var("gf1")->setConstant(kTRUE);
 		w.var("gf3")->setConstant(kTRUE);
+
+		//w.var("sigma0")->setConstant(kTRUE);
+		//w.var("sigma1")->setConstant(kTRUE);
+		//w.var("sigma2")->setConstant(kTRUE);
 		w.saveSnapshot("default", w.allVars());
 	}
 }

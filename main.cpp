@@ -21,15 +21,16 @@ int main (int argc, char *argv[]) {
 
 	///prepare pdf by fitting it to the whole DiMuon0_LowMass dataset
 	f.makeDataSet(chain0, 2.95, 3.35);
-
-	f.reduceDataSet("HLT_Dimuon0_LowMass", 2.5, 3.35);
+	f.reduceDataSet("HLT_Dimuon0_LowMass", 2.95, 3.35);
 	delete chain0;
 	f.preparePDF(true);
-	f.saveFitPdf("plots/fit_prep.pdf");
+	string plots_folder = "plots/"+to_string(year)+section;
+	gSystem->Exec(("mkdir "+plots_folder).c_str());
+	f.saveFitPdf(plots_folder+"/fit_prep.pdf");
 	f.resetDataSet();
 	//f.preparePDF(false);
 
-	float vtxprob_bin_boundaries[] = {0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.6, 0.8, 1.0};
+	float vtxprob_bin_boundaries[] = {0, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2, 0.3, 0.4, 0.6, 0.8, 1.0};
 	//float pt_bin_boundaries[] = {3, 3.5, 30, 100};
 	int nbins1 = (float)sizeof(vtxprob_bin_boundaries)/sizeof(vtxprob_bin_boundaries[0])-1;
 
@@ -47,7 +48,7 @@ int main (int argc, char *argv[]) {
 		string bincut = Form("mm_kin_vtx_prob>%f && mm_kin_vtx_prob<%f", vtxprob_bin_boundaries[j], vtxprob_bin_boundaries[j+1]);
 		f.reduceDataSet(bincut+mass_cut+" && HLT_Dimuon0_Jpsi_NoVertexing", 2.95, 3.25);
 		f.fit();
-		f.saveFitPdf(Form("plots/fit_%d_%d.pdf", i, j));
+		f.saveFitPdf(plots_folder+Form("/fit_%d_%d.pdf", i, j));
 		htot.SetBinContent(j+1, f.getSignalYield());
 		htot.SetBinError(j+1, f.getSignalYieldError());
 
@@ -55,7 +56,7 @@ int main (int argc, char *argv[]) {
 
 		f.reduceDataSet(bincut+mass_cut+" && HLT_Dimuon0_Jpsi", 2.95, 3.25); //It's right as it is, trust me. You don't have to apply also HLT_Dimuon0_Jpsi_NoVertexing, because of mis-aligned prescales!
 		f.fit();
-		f.saveFitPdf(Form("plots/fit_pass_%d_%d.pdf", i, j));
+		f.saveFitPdf(plots_folder+Form("/fit_pass_%d_%d.pdf", i, j));
 		hpass.SetBinContent(j+1, f.getSignalYield());
 		hpass.SetBinError(j+1, f.getSignalYieldError());
 
@@ -71,15 +72,7 @@ int main (int argc, char *argv[]) {
 	hpass.Draw();
 	ccc->SaveAs("plots/pass.pdf");
 
-
-	TEfficiency* eff = new TEfficiency(hpass, htot);
-	eff->SetName("eff");
-	TCanvas* c = new TCanvas("c","",600,400);
-	eff->Draw("AP");
-	gPad->Update();
-	c->SaveAs("plots/efficiency.pdf");
-
-	TFile *fout = new TFile("hists.root", "recreate");
+	TFile *fout = new TFile(Form("hists%d%s.root",year,section.c_str()), "recreate");
 	fout->cd();
 	hpass.Write();
 	htot.Write();
