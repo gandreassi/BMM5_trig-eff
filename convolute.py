@@ -2,8 +2,7 @@ import ROOT as r
 from uncertainties import ufloat
 
 chain = r.TChain("Events")
-#chain.Add("/eos/cms/store/group/phys_muon/dmytro/tmp/NanoAOD/501/BuToJpsiK_BMuonFilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen+RunIIFall17MiniAODv2-PU2017_12Apr2018_94X_mc2017_realistic_v14-v3+MINIAODSIM/70F7ABE3-69AA-E811-882F-B499BAAC0694.root")
-chain.Add("/eos/user/g/gandreas/jpsikmc/2017/12F836CC-DA41-E811-AB46-0CC47A57D036.root")
+chain.Add("/eos/user/g/gandreas/jpsikmc/2017/*.root")
 
 f_map = r.TFile.Open("hists2017.root")
 h_pass = f_map.Get("hpass")
@@ -13,16 +12,12 @@ h_tot = f_map.Get("htot")
 h_tot.Sumw2()
 h_tot.Scale(1./0.001254)
 
-eff_data = h_pass.Clone("h_eff_data")
-eff_data.Divide(h_tot)
+eff_data = r.TEfficiency(h_pass, h_tot)
+eff_MC = eff_data.Clone("simulation")
+eff_MC.GetPassedHistogram().Reset()
+eff_MC.GetTotalHistogram().Reset()
 
-#eff_data = r.TEfficiency(h_pass, h_tot)
-#eff_MC = r.TEfficiency("eff_MC", "eff_MC", eff_data.GetNbinsX(), eff_data.GetXaxis().GetXmin(), eff_data.GetXaxis().GetXmax())
-h_tot_MC  = eff_data.Clone("h_tot_MC")
-h_pass_MC = eff_data.Clone("h_pass_MC")
-h_tot_MC.Reset()
-h_pass_MC.Reset()
-
+#ge tpileup histogram for data and MC
 data_PU_file = r.TFile.Open("DataPileup_2017.root")
 data_PU_h = data_PU_file.Get("pileup")
 data_PU_h.Sumw2()
@@ -51,23 +46,14 @@ for event in chain:
 
 			this_vertex_prob = event.mm_kin_vtx_prob[0]
 			this_bin = eff_data.FindFixBin(this_vertex_prob)
-			n_pass += ufloat(eff_data.GetBinContent(this_bin), eff_data.GetBinError(this_bin))*PU_weight
+			n_pass += ufloat(eff_data.GetEfficiency(this_bin), 0.5*(eff_data.GetEfficiencyErrorLow(this_bin)+eff_data.GetEfficiencyErrorUp(this_bin)))*PU_weight
 			n_tot += PU_weight
 			passed = False
 			if event.HLT_Dimuon0_Jpsi:
 				passed = True
 				n_pass_MC += PU_weight
-				h_pass_MC.Fill(event.mm_kin_vtx_prob[0], PU_weight.n)
-			h_tot_MC.Fill(event.mm_kin_vtx_prob[0], PU_weight.n)
+			eff_MC.FillWeighted(passed, PU_weight.n, event.mm_kin_vtx_prob[0])
 
-print n_pass_MC
-print n
-h_pass_MC.Draw()
-raw_input()
-h_pass_MC.Sumw2()
-h_tot_MC.Sumw2()
-eff_MC = h_pass_MC.Clone("h_eff_MC")
-eff_MC.Divide(h_tot_MC)
 
 print "++++++++++++++++++++++++++++++++++++++++++++"
 print "Global numbers:"
@@ -75,17 +61,25 @@ eps_data = n_pass/n_tot
 print "Data-driven efficiency =", eps_data
 eps_MC = n_pass_MC/n_tot
 print "Simulated efficiency =", eps_MC
-print "Ratio (MC/data): ", eps_MC/eps_data
+diff = eps_data-eps_MC
+print "Relative difference (data-MC) =", diff.n/eps_data.n
+print "Difference significance =", abs(diff.n)/diff.s
+print "Ratio (data/MC): ", eps_MC/eps_data
 
-eff_data.SetTitle("Vertex trigger efficiency; vertex probability ; #epsilon"); 
+eff_data.SetTitle("data; vertex probability ; #epsilon"); 
 
 c = r.TCanvas("c")
-eff_data.Draw("E")
+eff_data.Draw("AP")
 r.gPad.Update()
-eff_data.GetYaxis().SetRangeUser(0,1.05)
-eff_MC.Draw("Esame")
+eff_data.GetPaintedGraph().SetMinimum(0)
+eff_data.GetPaintedGraph().SetMaximum(1.05)
+eff_MC.Draw("Psame")
+r.gPad.Update()
+eff_MC.GetPaintedGraph().SetMinimum(eff_data.GetPaintedGraph().GetMinimum())
+eff_MC.GetPaintedGraph().SetMaximum(eff_data.GetPaintedGraph().GetMaximum())
 eff_MC.SetLineColor(r.kRed)
 r.gPad.Update()
+c.BuildLegend()
 # eff_MC.GetPaintedGraph().SetMarkerStyle(4)
 # eff_MC.GetPaintedGraph().SetMarkerColor(r.kRed)
 # eff_MC.GetPaintedGraph().SetLineColor(r.kRed)
