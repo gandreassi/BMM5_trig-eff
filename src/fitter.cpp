@@ -12,6 +12,7 @@ void fitter::makeDataSet(TChain* chain, float M_min, float M_max){
 	TTreeReader r(chain);
 	TTreeReaderArray<Float_t> vtx_prob(r, "mm_kin_vtx_prob");
 	TTreeReaderArray<Float_t> DiMuon_mass(r, "mm_mass");
+	TTreeReaderValue<Float_t> mm_kin_cosAlpha(r, "mm_kin_cosAlpha");
 	TTreeReaderValue<bool> HLT_ref(r, "HLT_Dimuon0_LowMass");
 	TTreeReaderValue<bool> HLT_sig(r, "HLT_Dimuon0_Jpsi");
 	TTreeReaderValue<bool> HLT_norm(r, "HLT_Dimuon0_Jpsi_NoVertexing");
@@ -39,7 +40,7 @@ void fitter::makeDataSet(TChain* chain, float M_min, float M_max){
 		}
 
 		///add point int RooDataSet
-		if (DiMuon_mass[0]>=M_min && DiMuon_mass[0]<=M_max){
+		if (DiMuon_mass[0]>=M_min && DiMuon_mass[0]<=M_max && *mm_kin_cosAlpha>-2){
 			*M=DiMuon_mass[0];
 			*HLT_sig_roo=*HLT_sig;
 			*HLT_norm_roo=*HLT_norm;

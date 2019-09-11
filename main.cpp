@@ -4,20 +4,27 @@
 
 int main (int argc, char *argv[]) {
 
-	std::map<int, std::map<std::string, std::string>> files;
+	std::map<int, std::map<char, std::string>> files;
 
 	//files[2017]["B"] = "/eos/cms/store/group/phys_muon/dmytro/tmp/NanoAOD/501/Charmonium+Run2017B-31Mar2018-v1+MINIAOD/*.root";
-	files[2017]["C"] = "/eos/cms/store/group/phys_muon/dmytro/tmp/NanoAOD/501/Charmonium+Run2017C-31Mar2018-v1+MINIAOD/*.root";
-	files[2017]["D"] = "/eos/cms/store/group/phys_muon/dmytro/tmp/NanoAOD/501/Charmonium+Run2017D-31Mar2018-v1+MINIAOD/*.root";
-	files[2017]["E"] = "/eos/cms/store/group/phys_muon/dmytro/tmp/NanoAOD/501/Charmonium+Run2017E-31Mar2018-v1+MINIAOD/*.root";
-	files[2017]["F"] = "/eos/cms/store/group/phys_muon/dmytro/tmp/NanoAOD/501/Charmonium+Run2017F-31Mar2018-v1+MINIAOD/*.root";
+	files[2017]['C'] = "/eos/cms/store/group/phys_muon/dmytro/tmp/NanoAOD/501/Charmonium+Run2017C-31Mar2018-v1+MINIAOD/*.root";
+	files[2017]['D'] = "/eos/cms/store/group/phys_muon/dmytro/tmp/NanoAOD/501/Charmonium+Run2017D-31Mar2018-v1+MINIAOD/*.root";
+	files[2017]['E'] = "/eos/cms/store/group/phys_muon/dmytro/tmp/NanoAOD/501/Charmonium+Run2017E-31Mar2018-v1+MINIAOD/*.root";
+	files[2017]['F'] = "/eos/cms/store/group/phys_muon/dmytro/tmp/NanoAOD/501/Charmonium+Run2017F-31Mar2018-v1+MINIAOD/*.root";
+
+	files[2018]['A'] = "/eos/user/g/gandreas/jpsikdata/2018/Charmonium+Run2018A-17Sep2018-v1+MINIAOD/*.root";
+	files[2018]['B'] = "/eos/user/g/gandreas/jpsikdata/2018/Charmonium+Run2018B-17Sep2018-v1+MINIAOD/*.root";
+	files[2018]['C'] = "/eos/user/g/gandreas/jpsikdata/2018/Charmonium+Run2018C-17Sep2018-v1+MINIAOD/*.root";
+	files[2018]['D'] = "/eos/user/g/gandreas/jpsikdata/2018/Charmonium+Run2018D-17Sep2018-v1+MINIAOD/*.root";
 
 	fitter f;
 
 	TChain* chain0 = new TChain("Events");
 	int year = std::atoi(argv[1]);
 	string section = argv[2];
-	chain0->Add(files[year][section].c_str());
+	for(char& c : section) {
+		chain0->Add(files[year][c].c_str());
+	}
 
 	///prepare pdf by fitting it to the whole DiMuon0_LowMass dataset
 	f.makeDataSet(chain0, 2.95, 3.35);
@@ -40,15 +47,13 @@ int main (int argc, char *argv[]) {
 	htot.Sumw2();
 
 
-	int i =0;
-
 	string mass_cut = " && (M>2.95 && M<3.25)";
 
 	for (int j=0; j<nbins1; j++){
 		string bincut = Form("mm_kin_vtx_prob>%f && mm_kin_vtx_prob<%f", vtxprob_bin_boundaries[j], vtxprob_bin_boundaries[j+1]);
 		f.reduceDataSet(bincut+mass_cut+" && HLT_Dimuon0_Jpsi_NoVertexing", 2.95, 3.25);
 		f.fit();
-		f.saveFitPdf(plots_folder+Form("/fit_%d_%d.pdf", i, j));
+		f.saveFitPdf(plots_folder+Form("/fit_%d.pdf", j));
 		htot.SetBinContent(j+1, f.getSignalYield());
 		htot.SetBinError(j+1, f.getSignalYieldError());
 
@@ -56,7 +61,7 @@ int main (int argc, char *argv[]) {
 
 		f.reduceDataSet(bincut+mass_cut+" && HLT_Dimuon0_Jpsi", 2.95, 3.25); //It's right as it is, trust me. You don't have to apply also HLT_Dimuon0_Jpsi_NoVertexing, because of mis-aligned prescales!
 		f.fit();
-		f.saveFitPdf(plots_folder+Form("/fit_pass_%d_%d.pdf", i, j));
+		f.saveFitPdf(plots_folder+Form("/fit_pass_%d.pdf", j));
 		hpass.SetBinContent(j+1, f.getSignalYield());
 		hpass.SetBinError(j+1, f.getSignalYieldError());
 
@@ -67,10 +72,10 @@ int main (int argc, char *argv[]) {
 	hpass.GetXaxis()->SetTitle("vertex probability");
 	TCanvas* cc = new TCanvas("cc","",600,400);
 	htot.Draw();
-	cc->SaveAs("plots/tot.pdf");
+	cc->SaveAs((plots_folder+"/tot.pdf").c_str());
 	TCanvas* ccc = new TCanvas("ccc","",600,400);
 	hpass.Draw();
-	ccc->SaveAs("plots/pass.pdf");
+	ccc->SaveAs((plots_folder+"/pass.pdf").c_str());
 
 	TFile *fout = new TFile(Form("hists%d%s.root",year,section.c_str()), "recreate");
 	fout->cd();
