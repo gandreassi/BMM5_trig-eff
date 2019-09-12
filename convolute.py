@@ -5,20 +5,26 @@ from sys import argv
 year = argv[1]
 
 lumi={	"2017" : {	"HLT_Dimuon0_Jpsi" : 75350805.341,
-					"HLT_Dimuon0_Jpsi_NoVertexing" : 55714920.339},
-		"2018" : {	"HLT_Dimuon0_Jpsi" : 2692017.75321417,
-					"HLT_Dimuon0_Jpsi_NoVertexing" : 4036006.63603692}}
+					"HLT_Dimuon0_Jpsi_NoVertexing" : 55714920.339,
+					"HLT_DoubleMu4_3_Jpsi_Displaced" : 14479239278.717,
+					#"HLT_DoubleMu4_Jpsi_Displaced" : 340262324.071,
+					"HLT_DoubleMu4_Jpsi_NoVertexing" : 1318253605.108},
+		"2018" : {	"HLT_Dimuon0_Jpsi" : 2692017.753,
+					"HLT_Dimuon0_Jpsi_NoVertexing" : 4036006.636,
+					"HLT_DoubleMu4_3_Jpsi" : 1173487158.329,
+					#"HLT_DoubleMu4_Jpsi_Displaced" : 212306014.543,
+					"HLT_DoubleMu4_Jpsi_NoVertexing" : 52366197.343}}
 
 chain = r.TChain("Events")
 chain.Add("/eos/user/g/gandreas/jpsikmc/"+year+"/*.root")
 
-f_map = r.TFile.Open("hists"+year+".root")
+f_map = r.TFile.Open("hists"+year+"ABCD.root")
 h_pass = f_map.Get("hpass")
 h_pass.Sumw2()
-h_pass.Scale(1./lumi[year]["HLT_Dimuon0_Jpsi"])
+h_pass.Scale(1./lumi[year]["HLT_DoubleMu4_3_Jpsi"])
 h_tot = f_map.Get("htot")
 h_tot.Sumw2()
-h_tot.Scale(1./lumi[year]["HLT_Dimuon0_Jpsi_NoVertexing"])
+h_tot.Scale(1./lumi[year]["HLT_DoubleMu4_Jpsi_NoVertexing"])
 
 eff_data = h_pass.Clone()
 eff_data.Divide(h_tot)
@@ -50,15 +56,16 @@ for event in chain:
 	if len(event.mm_kin_vtx_prob)>0:
 		if  abs(event.mm_gen_pdgId[0])==443 \
 			and abs(event.mm_gen_mu1_pdgId[0])==13 and abs(event.mm_gen_mu2_pdgId[0])==13\
-			and event.mm_gen_mu1_pdgId[0]*event.mm_gen_mu2_pdgId[0]<0:
+			and event.mm_gen_mu1_pdgId[0]*event.mm_gen_mu2_pdgId[0]<0\
+			and (event.L1_DoubleMu0er1p5_SQ_OS_dR_Max1p4 or event.L1_DoubleMu0er1p4_SQ_OS_dR_Max1p4):
 
 			PU_weight = ufloat(PU_weights.GetBinContent(PU_weights.FindBin(chain.Pileup_nTrueInt)), PU_weights.GetBinError(PU_weights.FindBin(chain.Pileup_nTrueInt)))
 			this_vertex_prob = event.mm_kin_vtx_prob[0]
 			passed = False
-			if event.HLT_Dimuon0_Jpsi:
+			if event.HLT_DoubleMu4_3_Jpsi:
 				passed = True
 				n_pass_MC += PU_weight
-			if event.HLT_Dimuon0_Jpsi_NoVertexing:
+			if event.HLT_DoubleMu4_Jpsi_NoVertexing:
 				this_bin = eff_data.FindFixBin(this_vertex_prob)
 				n_pass += ufloat(eff_data.GetBinContent(this_bin), eff_data.GetBinError(this_bin))*PU_weight
 				n_tot += PU_weight

@@ -51,7 +51,7 @@ int main (int argc, char *argv[]) {
 
 	for (int j=0; j<nbins1; j++){
 		string bincut = Form("mm_kin_vtx_prob>%f && mm_kin_vtx_prob<%f", vtxprob_bin_boundaries[j], vtxprob_bin_boundaries[j+1]);
-		f.reduceDataSet(bincut+mass_cut+" && HLT_Dimuon0_Jpsi_NoVertexing", 2.95, 3.25);
+		f.reduceDataSet(bincut+mass_cut+" && HLT_DoubleMu4_Jpsi_NoVertexing", 2.95, 3.25);
 		f.fit();
 		f.saveFitPdf(plots_folder+Form("/fit_%d.pdf", j));
 		htot.SetBinContent(j+1, f.getSignalYield());
@@ -59,7 +59,7 @@ int main (int argc, char *argv[]) {
 
 		double tot =  f.getSignalYield();
 
-		f.reduceDataSet(bincut+mass_cut+" && HLT_Dimuon0_Jpsi", 2.95, 3.25); //It's right as it is, trust me. You don't have to apply also HLT_Dimuon0_Jpsi_NoVertexing, because of mis-aligned prescales!
+		f.reduceDataSet(bincut+mass_cut+" && HLT_DoubleMu4_3_Jpsi", 2.95, 3.25); //It's right as it is, trust me. You don't have to apply also HLT_Dimuon0_Jpsi_NoVertexing, because of mis-aligned prescales!
 		f.fit();
 		f.saveFitPdf(plots_folder+Form("/fit_pass_%d.pdf", j));
 		hpass.SetBinContent(j+1, f.getSignalYield());
