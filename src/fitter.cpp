@@ -164,7 +164,7 @@ void fitter::saveFitPdf(string pdffname){
 	pframe->GetXaxis()->SetTitle("m(#mu#mu)");
 	pframe->GetXaxis()->SetTitleSize(0.15);
 	pframe->GetYaxis()->SetLabelSize(0.1);
-	pframe->GetYaxis()->SetTitle("Pool  ");
+	pframe->GetYaxis()->SetTitle("Pull  ");
 	pframe->GetYaxis()->SetTitleSize(0.15);
 	pframe->GetYaxis()->SetTitleOffset(0.3);
 	pframe->addPlotable(hpull,"P");
