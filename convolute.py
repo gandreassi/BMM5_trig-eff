@@ -8,7 +8,7 @@ lumi={	"2017" : {	"HLT_Dimuon0_Jpsi" : 75350805.341,
 					"HLT_Dimuon0_Jpsi_NoVertexing" : 55714920.339,
 					"HLT_DoubleMu4_3_Jpsi_Displaced" : 14479239278.717,
 					#"HLT_DoubleMu4_Jpsi_Displaced" : 340262324.071,
-					"HLT_DoubleMu4_Jpsi_NoVertexing" : 1318253605.108},
+					"HLT_DoubleMu4_Jpsi_NoVertexing" : 340262324.072},
 		"2018" : {	"HLT_Dimuon0_Jpsi" : 2692017.753,
 					"HLT_Dimuon0_Jpsi_NoVertexing" : 4036006.636,
 					"HLT_DoubleMu4_3_Jpsi" : 1173487158.329,
@@ -18,10 +18,10 @@ lumi={	"2017" : {	"HLT_Dimuon0_Jpsi" : 75350805.341,
 chain = r.TChain("Events")
 chain.Add("/eos/user/g/gandreas/jpsikmc/"+year+"/*.root")
 
-f_map = r.TFile.Open("hists"+year+"ABCD.root")
+f_map = r.TFile.Open("hists"+year+".root")
 h_pass = f_map.Get("hpass")
 h_pass.Sumw2()
-h_pass.Scale(1./lumi[year]["HLT_DoubleMu4_3_Jpsi"])
+h_pass.Scale(1./lumi[year]["HLT_DoubleMu4_3_Jpsi_Displaced"])
 h_tot = f_map.Get("htot")
 h_tot.Sumw2()
 h_tot.Scale(1./lumi[year]["HLT_DoubleMu4_Jpsi_NoVertexing"])
@@ -57,12 +57,13 @@ for event in chain:
 		if  abs(event.mm_gen_pdgId[0])==443 \
 			and abs(event.mm_gen_mu1_pdgId[0])==13 and abs(event.mm_gen_mu2_pdgId[0])==13\
 			and event.mm_gen_mu1_pdgId[0]*event.mm_gen_mu2_pdgId[0]<0\
-			and (event.L1_DoubleMu0er1p5_SQ_OS_dR_Max1p4 or event.L1_DoubleMu0er1p4_SQ_OS_dR_Max1p4):
+			and (event.L1_DoubleMu0er1p5_SQ_OS_dR_Max1p4 or event.L1_DoubleMu0er1p4_SQ_OS_dR_Max1p4)\
+			and event.mm_kin_slxy>8:
 
 			PU_weight = ufloat(PU_weights.GetBinContent(PU_weights.FindBin(chain.Pileup_nTrueInt)), PU_weights.GetBinError(PU_weights.FindBin(chain.Pileup_nTrueInt)))
 			this_vertex_prob = event.mm_kin_vtx_prob[0]
 			passed = False
-			if event.HLT_DoubleMu4_3_Jpsi:
+			if event.HLT_DoubleMu4_3_Jpsi_Displaced:
 				passed = True
 				n_pass_MC += PU_weight
 			if event.HLT_DoubleMu4_Jpsi_NoVertexing:
