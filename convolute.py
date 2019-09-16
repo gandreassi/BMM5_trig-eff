@@ -6,9 +6,9 @@ year = argv[1]
 
 lumi={	"2017" : {	"HLT_Dimuon0_Jpsi" : 75350805.341,
 					"HLT_Dimuon0_Jpsi_NoVertexing" : 55714920.339,
-					"HLT_DoubleMu4_3_Jpsi_Displaced" : 14479239278.717,
-					#"HLT_DoubleMu4_Jpsi_Displaced" : 340262324.071,
-					"HLT_DoubleMu4_Jpsi_NoVertexing" : 340262324.072},
+					#"HLT_DoubleMu4_3_Jpsi_Displaced" : 14479239278.717,
+					"HLT_DoubleMu4_Jpsi_Displaced" : 876993819.962,
+					"HLT_DoubleMu4_Jpsi_NoVertexing" : 234517906.885},
 		"2018" : {	"HLT_Dimuon0_Jpsi" : 2692017.753,
 					"HLT_Dimuon0_Jpsi_NoVertexing" : 4036006.636,
 					"HLT_DoubleMu4_3_Jpsi" : 1173487158.329,
@@ -21,7 +21,7 @@ chain.Add("/eos/user/g/gandreas/jpsikmc/"+year+"/*.root")
 f_map = r.TFile.Open("hists"+year+".root")
 h_pass = f_map.Get("hpass")
 h_pass.Sumw2()
-h_pass.Scale(1./lumi[year]["HLT_DoubleMu4_3_Jpsi_Displaced"])
+h_pass.Scale(1./lumi[year]["HLT_DoubleMu4_Jpsi_Displaced"])
 h_tot = f_map.Get("htot")
 h_tot.Sumw2()
 h_tot.Scale(1./lumi[year]["HLT_DoubleMu4_Jpsi_NoVertexing"])
@@ -33,6 +33,7 @@ binning = eff_data.GetXaxis().GetXbins()
 eff_MC = eff_data.Clone("simulation")
 eff_MC = r.TEfficiency("eff_MC","simulation;vertex probability;#epsilon", eff_data.GetNbinsX(), binning.GetArray())
 eff_MC.SetStatisticOption(r.TEfficiency.kBBayesian)
+eff_MC.SetUseWeightedEvents()
 
 #ge tpileup histogram for data and MC
 data_PU_file = r.TFile.Open("DataPileup_"+year+".root")
@@ -57,13 +58,13 @@ for event in chain:
 		if  abs(event.mm_gen_pdgId[0])==443 \
 			and abs(event.mm_gen_mu1_pdgId[0])==13 and abs(event.mm_gen_mu2_pdgId[0])==13\
 			and event.mm_gen_mu1_pdgId[0]*event.mm_gen_mu2_pdgId[0]<0\
-			and (event.L1_DoubleMu0er1p5_SQ_OS_dR_Max1p4 or event.L1_DoubleMu0er1p4_SQ_OS_dR_Max1p4)\
-			and event.mm_kin_slxy>8:
+			and event.mm_kin_slxy>5:
+			#and (event.L1_DoubleMu0er1p5_SQ_OS_dR_Max1p4 or event.L1_DoubleMu0er1p4_SQ_OS_dR_Max1p4)\
 
 			PU_weight = ufloat(PU_weights.GetBinContent(PU_weights.FindBin(chain.Pileup_nTrueInt)), PU_weights.GetBinError(PU_weights.FindBin(chain.Pileup_nTrueInt)))
 			this_vertex_prob = event.mm_kin_vtx_prob[0]
 			passed = False
-			if event.HLT_DoubleMu4_3_Jpsi_Displaced:
+			if event.HLT_DoubleMu4_Jpsi_Displaced:
 				passed = True
 				n_pass_MC += PU_weight
 			if event.HLT_DoubleMu4_Jpsi_NoVertexing:

@@ -7,7 +7,7 @@ int main (int argc, char *argv[]) {
 	std::map<int, std::map<char, std::string>> files;
 
 	//files[2017]["B"] = "/eos/cms/store/group/phys_muon/dmytro/tmp/NanoAOD/501/Charmonium+Run2017B-31Mar2018-v1+MINIAOD/*.root";
-	files[2017]['C'] = "/eos/cms/store/group/phys_muon/dmytro/tmp/NanoAOD/501/Charmonium+Run2017C-31Mar2018-v1+MINIAOD/*.root";
+	//files[2017]['C'] = "/eos/cms/store/group/phys_muon/dmytro/tmp/NanoAOD/501/Charmonium+Run2017C-31Mar2018-v1+MINIAOD/*.root";
 	files[2017]['D'] = "/eos/cms/store/group/phys_muon/dmytro/tmp/NanoAOD/501/Charmonium+Run2017D-31Mar2018-v1+MINIAOD/*.root";
 	files[2017]['E'] = "/eos/cms/store/group/phys_muon/dmytro/tmp/NanoAOD/501/Charmonium+Run2017E-31Mar2018-v1+MINIAOD/*.root";
 	files[2017]['F'] = "/eos/cms/store/group/phys_muon/dmytro/tmp/NanoAOD/501/Charmonium+Run2017F-31Mar2018-v1+MINIAOD/*.root";
@@ -59,7 +59,7 @@ int main (int argc, char *argv[]) {
 
 		double tot =  f.getSignalYield();
 
-		f.reduceDataSet(bincut+mass_cut+" && HLT_DoubleMu4_3_Jpsi_Displaced", 2.95, 3.25); //It's right as it is, trust me. You don't have to apply also HLT_Dimuon0_Jpsi_NoVertexing, because of mis-aligned prescales!
+		f.reduceDataSet(bincut+mass_cut+" && HLT_DoubleMu4_Jpsi_Displaced", 2.95, 3.25); //It's right as it is, trust me. You don't have to apply also HLT_Dimuon0_Jpsi_NoVertexing, because of mis-aligned prescales!
 		f.fit();
 		f.saveFitPdf(plots_folder+Form("/fit_pass_%d.pdf", j));
 		hpass.SetBinContent(j+1, f.getSignalYield());

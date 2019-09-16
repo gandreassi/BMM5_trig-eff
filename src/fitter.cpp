@@ -16,12 +16,12 @@ void fitter::makeDataSet(TChain* chain, float M_min, float M_max){
 	TTreeReaderValue<bool> L1_DoubleMu0er1p5_SQ_OS_dR_Max1p4(r, "L1_DoubleMu0er1p5_SQ_OS_dR_Max1p4");
 	TTreeReaderValue<bool> L1_DoubleMu0er1p4_SQ_OS_dR_Max1p4(r, "L1_DoubleMu0er1p4_SQ_OS_dR_Max1p4");
 	TTreeReaderValue<bool> HLT_ref(r, "HLT_Dimuon0_LowMass");
-	TTreeReaderValue<bool> HLT_sig(r, "HLT_DoubleMu4_3_Jpsi_Displaced");
+	TTreeReaderValue<bool> HLT_sig(r, "HLT_DoubleMu4_Jpsi_Displaced");
 	TTreeReaderValue<bool> HLT_norm(r, "HLT_DoubleMu4_Jpsi_NoVertexing");
 
 	RooRealVar *M = new RooRealVar("M","m(#mu#mu)",M_min, M_max);
 	RooRealVar *HLT_ref_roo = new RooRealVar("HLT_Dimuon0_LowMass","HLT_Dimuon0_LowMass", -1);
-	RooRealVar *HLT_sig_roo = new RooRealVar("HLT_DoubleMu4_3_Jpsi_Displaced","HLT_DoubleMu4_3_Jpsi_Displaced", -1);
+	RooRealVar *HLT_sig_roo = new RooRealVar("HLT_DoubleMu4_Jpsi_Displaced","HLT_DoubleMu4_Jpsi_Displaced", -1);
 	RooRealVar *HLT_norm_roo = new RooRealVar("HLT_DoubleMu4_Jpsi_NoVertexing","HLT_DoubleMu4_Jpsi_NoVertexing", -1);
 	RooRealVar *vtx_prob_roo = new RooRealVar("mm_kin_vtx_prob","mm_kin_vtx_prob", -1);
 	data = new RooDataSet("data", "data", RooArgSet(*M,*HLT_ref_roo,*HLT_sig_roo,*HLT_norm_roo,*vtx_prob_roo));
@@ -42,7 +42,7 @@ void fitter::makeDataSet(TChain* chain, float M_min, float M_max){
 		}
 
 		///add point int RooDataSet
-		if (DiMuon_mass[0]>=M_min && DiMuon_mass[0]<=M_max && *mm_kin_slxy>8 && (*L1_DoubleMu0er1p5_SQ_OS_dR_Max1p4 || *L1_DoubleMu0er1p4_SQ_OS_dR_Max1p4)){
+		if (DiMuon_mass[0]>=M_min && DiMuon_mass[0]<=M_max && *mm_kin_slxy>5){
 			*M=DiMuon_mass[0];
 			*HLT_sig_roo=*HLT_sig;
 			*HLT_norm_roo=*HLT_norm;
