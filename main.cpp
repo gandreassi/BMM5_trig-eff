@@ -37,44 +37,51 @@ int main (int argc, char *argv[]) {
 	f.resetDataSet();
 	//f.preparePDF(false);
 
-	float vtxprob_bin_boundaries[] = {0, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2, 0.3, 0.4, 0.6, 0.8, 1.0};
+	float vtxprob_bin_boundaries[] = {0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.7, 1.0};
+	float displ_bin_boundaries[] = {0, 3, 6, 9, 20, 40, 150};
 	//float pt_bin_boundaries[] = {3, 3.5, 30, 100};
-	int nbins1 = (float)sizeof(vtxprob_bin_boundaries)/sizeof(vtxprob_bin_boundaries[0])-1;
+	int nbins_vtx = (float)sizeof(vtxprob_bin_boundaries)/sizeof(vtxprob_bin_boundaries[0])-1;
+	int nbins_displ = (float)sizeof(displ_bin_boundaries)/sizeof(displ_bin_boundaries[0])-1;
 
-	TH1F hpass = TH1F("hpass", "hpass", nbins1, vtxprob_bin_boundaries);
-	TH1F htot = TH1F("htot", "htot", nbins1, vtxprob_bin_boundaries);
+	TH2F hpass = TH2F("hpass", "hpass", nbins_vtx, vtxprob_bin_boundaries, nbins_displ, displ_bin_boundaries);
+	TH2F htot = TH2F("htot", "htot", nbins_vtx, vtxprob_bin_boundaries, nbins_displ, displ_bin_boundaries);
 	hpass.Sumw2();
 	htot.Sumw2();
 
 
 	string mass_cut = " && (M>2.95 && M<3.25)";
 
-	for (int j=0; j<nbins1; j++){
-		string bincut = Form("mm_kin_vtx_prob>%f && mm_kin_vtx_prob<%f", vtxprob_bin_boundaries[j], vtxprob_bin_boundaries[j+1]);
-		f.reduceDataSet(bincut+mass_cut+" && HLT_DoubleMu4_Jpsi_NoVertexing", 2.95, 3.25);
-		f.fit();
-		f.saveFitPdf(plots_folder+Form("/fit_%d.pdf", j));
-		htot.SetBinContent(j+1, f.getSignalYield());
-		htot.SetBinError(j+1, f.getSignalYieldError());
+	for (int j=0; j<nbins_vtx; j++){ 
+		string vtx_bincut = Form("mm_kin_vtx_prob>%f && mm_kin_vtx_prob<%f", vtxprob_bin_boundaries[j], vtxprob_bin_boundaries[j+1]);
+		for (int k=0; k<nbins_displ; k++){
+			string displ_bincut = Form("&& mm_kin_slxy>%f && mm_kin_slxy<%f", displ_bin_boundaries[k], displ_bin_boundaries[k+1]);
 
-		double tot =  f.getSignalYield();
+			f.reduceDataSet(vtx_bincut+displ_bincut+mass_cut+" && HLT_DoubleMu4_Jpsi_NoVertexing", 2.95, 3.25);
+			f.fit();
+			f.saveFitPdf(plots_folder+Form("/fit_%d_%d.pdf", j, k));
+			htot.SetBinContent(j+1, k+1, f.getSignalYield());
+			htot.SetBinError(j+1, k+1, f.getSignalYieldError());
 
-		f.reduceDataSet(bincut+mass_cut+" && HLT_DoubleMu4_Jpsi_Displaced", 2.95, 3.25); //It's right as it is, trust me. You don't have to apply also HLT_Dimuon0_Jpsi_NoVertexing, because of mis-aligned prescales!
-		f.fit();
-		f.saveFitPdf(plots_folder+Form("/fit_pass_%d.pdf", j));
-		hpass.SetBinContent(j+1, f.getSignalYield());
-		hpass.SetBinError(j+1, f.getSignalYieldError());
+			double tot =  f.getSignalYield();
 
-		std::cout<<"tot: "<<tot<<" pass: "<<f.getSignalYield()<<endl;
+			f.reduceDataSet(vtx_bincut+displ_bincut+mass_cut+" && HLT_DoubleMu4_Jpsi_Displaced", 2.95, 3.25); //It's right as it is, trust me. You don't have to apply also HLT_Dimuon0_Jpsi_NoVertexing, because of mis-aligned prescales!
+			f.fit();
+			f.saveFitPdf(plots_folder+Form("/fit_pass_%d_%d.pdf", j, k));
+			hpass.SetBinContent(j+1, k+1, f.getSignalYield());
+			hpass.SetBinError(j+1, k+1, f.getSignalYieldError());
+
+			std::cout<<"tot: "<<tot<<" pass: "<<f.getSignalYield()<<endl;
+		}
+
 	}
 
 	htot.GetXaxis()->SetTitle("vertex probability");
 	hpass.GetXaxis()->SetTitle("vertex probability");
 	TCanvas* cc = new TCanvas("cc","",600,400);
-	htot.Draw();
+	htot.Draw("colz");
 	cc->SaveAs((plots_folder+"/tot.pdf").c_str());
 	TCanvas* ccc = new TCanvas("ccc","",600,400);
-	hpass.Draw();
+	hpass.Draw("colz");
 	ccc->SaveAs((plots_folder+"/pass.pdf").c_str());
 
 	TFile *fout = new TFile(Form("hists%d%s.root",year,section.c_str()), "recreate");
