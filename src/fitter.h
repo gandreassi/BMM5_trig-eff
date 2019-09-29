@@ -95,7 +95,7 @@ class fitter {
 		
 		fitter();//constructor
 
-		void makeDataSet(TChain*, float, float);
+		void makeDataSet(TChain*, float, float, std::string, std::string);
 		void reduceDataSet(std::string, float, float);
 		void resetDataSet();
 		void fit();
@@ -111,6 +111,7 @@ class fitter {
 		RooDataHist *binned_data;
 		float M_min_def;
 		float M_max_def;
+		RooFitResult * result;
 };
 
 #endif
